@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Financial Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --surface: #ffffff;
+    --surface2: #f0ede6;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1a1814;
+    --text2: #6b6760;
+    --text3: #9e9b96;
+    --green: #0a6640;
+    --green-bg: #e8f5ee;
+    --red: #8b2020;
+    --red-bg: #faecec;
+    --amber: #7a4a0a;
+    --amber-bg: #fdf3e3;
+    --blue: #0d4a7a;
+    --blue-bg: #e8f1fa;
+    --accent: #1a3a5c;
+    --accent2: #c8a96e;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.05);
+    --shadow-lg: 0 4px 24px rgba(0,0,0,0.1);
+  }
+  .dark {
+    --bg: #111210;
+    --surface: #1c1c1a;
+    --surface2: #252522;
+    --border: rgba(255,255,255,0.1);
+    --border2: rgba(255,255,255,0.18);
+    --text: #f0ede6;
+    --text2: #9e9b96;
+    --text3: #6b6760;
+    --green: #4ade80;
+    --green-bg: #0a2e1a;
+    --red: #f87171;
+    --red-bg: #2e0a0a;
+    --amber: #fbbf24;
+    --amber-bg: #2e1f00;
+    --blue: #60a5fa;
+    --blue-bg: #0a1e2e;
+    --accent: #c8a96e;
+    --accent2: #1a3a5c;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.3s, color 0.3s; }
+
+  /* LAYOUT */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); padding: 2rem 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; z-index: 100; transition: background 0.3s; }
+  .main { margin-left: 220px; padding: 2rem; max-width: 1100px; }
+  .logo { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+  .logo-title { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--text); letter-spacing: -0.3px; }
+  .logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 1.5rem; font-size: 13px; color: var(--text2); cursor: pointer; transition: all 0.15s; border-left: 2px solid transparent; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--surface2); font-weight: 500; }
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+  .nav-section { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); padding: 1rem 1.5rem 0.4rem; font-weight: 500; }
+
+  /* SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+  .page-title { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--text); margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: var(--text3); margin-bottom: 1.5rem; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); margin-bottom: 1rem; transition: background 0.3s; }
+  .card-title { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+
+  /* METRIC */
+  .metric { background: var(--surface2); border-radius: var(--radius-sm); padding: 1rem 1.25rem; }
+  .metric-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
+  .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 500; }
+  .metric-val.green { color: var(--green); }
+  .metric-val.red { color: var(--red); }
+  .metric-val.amber { color: var(--amber); }
+  .metric-val.blue { color: var(--blue); }
+  .metric-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+  /* TABLE ROWS */
+  .row { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); gap: 8px; }
+  .row:last-child { border-bottom: none; padding-bottom: 0; }
+  .row:first-child { padding-top: 0; }
+  .row-label { flex: 1; font-size: 14px; }
+  .row-label small { display: block; font-size: 11px; color: var(--text3); margin-top: 1px; }
+  .row-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; }
+  .row-val.green { color: var(--green); }
+  .row-val.red { color: var(--red); }
+  .row-val.amber { color: var(--amber); }
+
+  /* INPUTS */
+  input[type="text"], input[type="number"], input[type="date"], select, textarea {
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm);
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 7px 10px;
+    outline: none; transition: border 0.15s; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  .inline-num { font-family: 'JetBrains Mono', monospace; font-size: 13px; text-align: right; width: 130px; padding: 5px 8px; }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); transition: all 0.15s; font-weight: 500; }
+  .btn:hover { background: var(--border); }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-danger { color: var(--red); border-color: transparent; background: transparent; padding: 4px 6px; font-size: 12px; }
+  .btn-danger:hover { background: var(--red-bg); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-ghost { border-color: transparent; background: transparent; color: var(--text2); }
+  .btn-ghost:hover { background: var(--surface2); }
+  .add-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 100px; }
+  .field label { font-size: 11px; color: var(--text3); font-weight: 500; letter-spacing: 0.04em; }
+
+  /* TAGS & BADGES */
+  .badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 20px; }
+  .badge.green { background: var(--green-bg); color: var(--green); }
+  .badge.red { background: var(--red-bg); color: var(--red); }
+  .badge.amber { background: var(--amber-bg); color: var(--amber); }
+  .badge.blue { background: var(--blue-bg); color: var(--blue); }
+
+  /* PROGRESS BAR */
+  .prog-wrap { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; flex: 1; }
+  .prog-bar { height: 100%; border-radius: 3px; transition: width 0.4s; }
+
+  /* ALERTS */
+  .alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px; border-left: 3px solid; }
+  .alert.red { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+  .alert.amber { background: var(--amber-bg); color: var(--amber); border-color: var(--amber); }
+  .alert.green { background: var(--green-bg); color: var(--green); border-color: var(--green); }
+
+  /* TOPBAR */
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .topbar-date { font-size: 12px; color: var(--text3); }
+
+  /* HEALTH SCORE */
+  .score-ring { width: 100px; height: 100px; position: relative; margin: 0 auto 12px; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-num { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 500; }
+
+  /* CHART */
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius); padding: 1.5rem; width: 420px; max-width: 95vw; box-shadow: var(--shadow-lg); }
+  .modal h3 { font-family: 'DM Serif Display', serif; font-size: 20px; margin-bottom: 1rem; }
+  .modal-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* TRANSACTIONS */
+  .tx-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .tx-row:last-child { border-bottom: none; }
+  .tx-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .tx-cat { flex: 1; }
+  .tx-note { color: var(--text3); font-size: 12px; }
+  .tx-date { color: var(--text3); font-size: 12px; min-width: 70px; text-align: right; }
+  .tx-amt { font-family: 'JetBrains Mono', monospace; font-weight: 500; min-width: 90px; text-align: right; }
+
+  /* DARK TOGGLE */
+  .theme-toggle { position: fixed; bottom: 1.5rem; left: 1.5rem; z-index: 150; }
+
+  /* SNAPSHOT TABLE */
+  .snap-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+  .snap-table th { font-size: 11px; color: var(--text3); font-weight: 500; text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .snap-table td { padding: 8px 8px; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .snap-table tr:last-child td { border-bottom: none; }
+
+  /* EMI CALC */
+  .calc-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .calc-row label { font-size: 13px; color: var(--text2); width: 160px; flex-shrink: 0; }
+  .calc-result { background: var(--surface2); border-radius: var(--radius-sm); padding: 1rem; margin-top: 1rem; text-align: center; }
+  .calc-emi { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 500; color: var(--accent); }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 60px; }
+    .nav-item span, .nav-section, .logo-sub, .logo-title { display: none; }
+    .logo { padding: 0 0.75rem 1rem; }
+    .main { margin-left: 60px; padding: 1rem; }
+    .grid4 { grid-template-columns: 1fr 1fr; }
+    .grid3 { grid-template-columns: 1fr 1fr; }
+    .grid2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-title">FinTrack</div>
+    <div class="logo-sub">Personal Finance</div>
+  </div>
+  <div class="nav-section">Overview</div>
+  <div class="nav-item active" onclick="nav('dashboard')"><span class="nav-icon">◈</span><span>Dashboard</span></div>
+  <div class="nav-item" onclick="nav('alerts')"><span class="nav-icon">◉</span><span>Alerts</span></div>
+  <div class="nav-section">Accounts</div>
+  <div class="nav-item" onclick="nav('banks')"><span class="nav-icon">⬡</span><span>Bank Accounts</span></div>
+  <div class="nav-item" onclick="nav('cards')"><span class="nav-icon">▣</span><span>Credit Cards</span></div>
+  <div class="nav-item" onclick="nav('lending')"><span class="nav-icon">◎</span><span>Money Lent</span></div>
+  <div class="nav-item" onclick="nav('loans')"><span class="nav-icon">△</span><span>Loans</span></div>
+  <div class="nav-section">Income</div>
+  <div class="nav-item" onclick="nav('misc')"><span class="nav-icon">✦</span><span>Misc Income</span></div>
+  <div class="nav-item" onclick="nav('transactions')"><span class="nav-icon">≡</span><span>Transactions</span></div>
+  <div class="nav-section">Tools</div>
+  <div class="nav-item" onclick="nav('emi')"><span class="nav-icon">∿</span><span>EMI Calculator</span></div>
+  <div class="nav-item" onclick="nav('snapshots')"><span class="nav-icon">◷</span><span>Snapshots</span></div>
+  <div class="nav-item" onclick="nav('goals')"><span class="nav-icon">◎</span><span>Goals</span></div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div id="section-breadcrumb" style="font-size:13px;color:var(--text3);">Dashboard</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span class="topbar-date" id="today-date"></span>
+      <button class="btn btn-sm" onclick="saveSnapshot()">📸 Save snapshot</button>
+      <button class="btn btn-sm" onclick="exportData()">↓ Export</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="section active" id="sec-dashboard">
+    <div class="page-title">Overview</div>
+    <div class="page-sub" id="dash-sub">Your financial snapshot at a glance</div>
+
+    <div id="alert-banner" style="margin-bottom:1rem;"></div>
+
+    <div class="grid4" style="margin-bottom:1rem;" id="top-metrics"></div>
+
+    <div class="grid2" style="margin-bottom:1rem;">
+      <div class="card">
+        <div class="card-title">Assets vs Liabilities</div>
+        <div class="chart-wrap" style="height:200px;"><canvas id="pieChart" role="img" aria-label="Assets vs liabilities pie chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Net worth trend</div>
+        <div class="chart-wrap" style="height:200px;"><canvas id="trendChart" role="img" aria-label="Net worth over time"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Credit utilization by card</div>
+        <div id="cc-util-bars"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Financial health score</div>
+        <div class="score-ring">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--border)" stroke-width="8"/>
+            <circle id="score-arc" cx="50" cy="50" r="42" fill="none" stroke="#4ade80" stroke-width="8" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264"/>
+          </svg>
+          <div class="score-num" id="score-num">—</div>
+        </div>
+        <div id="score-tips" style="font-size:12px;color:var(--text2);line-height:1.6;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERTS -->
+  <div class="section" id="sec-alerts">
+    <div class="page-title">Alerts & nudges</div>
+    <div class="page-sub">Smart flags based on your data</div>
+    <div id="all-alerts"></div>
+  </div>
+
+  <!-- BANKS -->
+  <div class="section" id="sec-banks">
+    <div class="page-title">Bank accounts</div>
+    <div class="page-sub">Track balances across all accounts</div>
+    <div class="card">
+      <div id="bank-list"></div>
+      <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;display:flex;align-items:center;gap:8px;">
+        <span style="flex:1;font-size:14px;font-weight:500;">Cash in hand</span>
+        <input type="number" class="inline-num" id="cash-input" value="0" onchange="state.cash=+this.value;renderAll()" placeholder="0">
+      </div>
+      <div class="add-row" id="bank-add-row" style="display:none;">
+        <div class="field"><label>Bank name</label><input type="text" id="b-name" placeholder="e.g. Axis Bank"></div>
+        <div class="field"><label>Balance (₹)</label><input type="number" id="b-bal" placeholder="0"></div>
+        <div class="field" style="flex:0;justify-content:flex-end;padding-top:18px;"><button class="btn btn-primary btn-sm" onclick="addBank()">Add</button></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="toggleRow('bank-add-row')">+ Add account</button>
+    </div>
+  </div>
+
+  <!-- CREDIT CARDS -->
+  <div class="section" id="sec-cards">
+    <div class="page-title">Credit cards</div>
+    <div class="page-sub">Track outstanding, limits & utilization</div>
+
+    <div class="grid3" style="margin-bottom:1rem;" id="cc-summary-metrics"></div>
+
+    <div class="card">
+      <div id="cc-list"></div>
+      <div class="add-row" id="cc-add-row" style="display:none;">
+        <div class="field"><label>Card name</label><input type="text" id="cc-name" placeholder="e.g. Axis Magnus"></div>
+        <div class="field"><label>Outstanding (₹)</label><input type="number" id="cc-out" placeholder="0"></div>
+        <div class="field"><label>Total limit (₹)</label><input type="number" id="cc-lim" placeholder="0"></div>
+        <div class="field"><label>Due date</label><input type="number" id="cc-due" placeholder="Day of month (1-31)"></div>
+        <div class="field" style="flex:0;justify-content:flex-end;padding-top:18px;"><button class="btn btn-primary btn-sm" onclick="addCC()">Add</button></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="toggleRow('cc-add-row')">+ Add card</button>
+    </div>
+  </div>
+
+  <!-- LENDING -->
+  <div class="section" id="sec-lending">
+    <div class="page-title">Money lent out</div>
+    <div class="page-sub">Track borrowers, principals & interest</div>
+    <div class="grid3" style="margin-bottom:1rem;" id="lend-metrics"></div>
+    <div class="card">
+      <div id="lend-list"></div>
+      <div class="add-row" id="lend-add-row" style="display:none;">
+        <div class="field"><label>Name</label><input type="text" id="l-name" placeholder="Borrower name"></div>
+        <div class="field"><label>Amount lent (₹)</label><input type="number" id="l-amt" placeholder="0"></div>
+        <div class="field"><label>Monthly interest (₹)</label><input type="number" id="l-int" placeholder="0"></div>
+        <div class="field"><label>Lent on</label><input type="date" id="l-date"></div>
+        <div class="field"><label>Note</label><input type="text" id="l-note" placeholder="Optional"></div>
+        <div class="field" style="flex:0;justify-content:flex-end;padding-top:18px;"><button class="btn btn-primary btn-sm" onclick="addLend()">Add</button></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="toggleRow('lend-add-row')">+ Add borrower</button>
+    </div>
+  </div>
+
+  <!-- LOANS -->
+  <div class="section" id="sec-loans">
+    <div class="page-title">Bank loans</div>
+    <div class="page-sub">Track outstanding loan balances</div>
+    <div class="card">
+      <div id="loan-list"></div>
+      <div class="add-row" id="loan-add-row" style="display:none;">
+        <div class="field"><label>Loan / Bank</label><input type="text" id="ln-name" placeholder="e.g. HDFC Home Loan"></div>
+        <div class="field"><label>Outstanding (₹)</label><input type="number" id="ln-out" placeholder="0"></div>
+        <div class="field"><label>EMI (₹/mo)</label><input type="number" id="ln-emi" placeholder="0"></div>
+        <div class="field"><label>Note</label><input type="text" id="ln-note" placeholder="Optional"></div>
+        <div class="field" style="flex:0;justify-content:flex-end;padding-top:18px;"><button class="btn btn-primary btn-sm" onclick="addLoan()">Add</button></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="toggleRow('loan-add-row')">+ Add loan</button>
+    </div>
+  </div>
+
+  <!-- MISC INCOME -->
+  <div class="section" id="sec-misc">
+    <div class="page-title">Miscellaneous income</div>
+    <div class="page-sub">Record one-off or recurring income sources</div>
+    <div class="card">
+      <div id="misc-list"></div>
+      <div class="add-row" id="misc-add-row" style="display:none;">
+        <div class="field"><label>Description</label><input type="text" id="m-desc" placeholder="e.g. Rental income"></div>
+        <div class="field"><label>Amount (₹)</label><input type="number" id="m-amt" placeholder="0"></div>
+        <div class="field"><label>Category</label>
+          <select id="m-cat">
+            <option>Rental</option><option>Dividend</option><option>Freelance</option><option>Gift</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field"><label>Date</label><input type="date" id="m-date"></div>
+        <div class="field" style="flex:0;justify-content:flex-end;padding-top:18px;"><button class="btn btn-primary btn-sm" onclick="addMisc()">Add</button></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="toggleRow('misc-add-row')">+ Add income</button>
+    </div>
+  </div>
+
+  <!-- TRANSACTIONS -->
+  <div class="section" id="sec-transactions">
+    <div class="page-title">Transactions</div>
+    <div class="page-sub">Income & expense log</div>
+    <div class="card" style="margin-bottom:1rem;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div class="field"><label>Description</label><input type="text" id="tx-desc" placeholder="e.g. Groceries"></div>
+        <div class="field"><label>Amount (₹)</label><input type="number" id="tx-amt" placeholder="0"></div>
+        <div class="field"><label>Type</label><select id="tx-type"><option value="expense">Expense</option><option value="income">Income</option></select></div>
+        <div class="field"><label>Category</label>
+          <select id="tx-cat">
+            <option>Food</option><option>Transport</option><option>Shopping</option><option>Bills</option><option>Medical</option><option>Entertainment</option><option>Investment</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field"><label>Date</label><input type="date" id="tx-date"></div>
+        <div class="field" style="flex:0;justify-content:flex-end;padding-top:18px;"><button class="btn btn-primary btn-sm" onclick="addTx()">Add</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div id="tx-list"></div>
+    </div>
+  </div>
+
+  <!-- EMI CALCULATOR -->
+  <div class="section" id="sec-emi">
+    <div class="page-title">EMI Calculator</div>
+    <div class="page-sub">Calculate monthly instalments for any loan</div>
+    <div class="card" style="max-width:480px;">
+      <div class="calc-row"><label>Loan amount (₹)</label><input type="number" id="emi-amt" value="500000" oninput="calcEMI()"></div>
+      <div class="calc-row"><label>Annual interest rate (%)</label><input type="number" id="emi-rate" value="10" step="0.1" oninput="calcEMI()"></div>
+      <div class="calc-row"><label>Tenure (months)</label><input type="number" id="emi-tenure" value="36" oninput="calcEMI()"></div>
+      <div class="calc-result">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">Monthly EMI</div>
+        <div class="calc-emi" id="emi-result">—</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:8px;" id="emi-detail"></div>
+      </div>
+      <div class="chart-wrap" style="height:200px;margin-top:1rem;"><canvas id="emiChart" role="img" aria-label="EMI principal vs interest breakdown"></canvas></div>
+    </div>
+  </div>
+
+  <!-- SNAPSHOTS -->
+  <div class="section" id="sec-snapshots">
+    <div class="page-title">Monthly snapshots</div>
+    <div class="page-sub">Saved net worth history</div>
+    <div class="card">
+      <table class="snap-table">
+        <thead><tr><th>Date</th><th>Bank+Cash</th><th>CC Outstanding</th><th>Loans</th><th>Net Worth</th><th></th></tr></thead>
+        <tbody id="snap-table-body"></tbody>
+      </table>
+      <div style="margin-top:12px;color:var(--text3);font-size:13px;" id="snap-empty">No snapshots yet. Click "Save snapshot" in the top bar.</div>
+    </div>
+  </div>
+
+  <!-- GOALS -->
+  <div class="section" id="sec-goals">
+    <div class="page-title">Savings goals</div>
+    <div class="page-sub">Track progress toward financial targets</div>
+    <div id="goals-list" style="margin-bottom:1rem;"></div>
+    <div class="card">
+      <div class="card-title">Add new goal</div>
+      <div class="add-row">
+        <div class="field"><label>Goal name</label><input type="text" id="g-name" placeholder="e.g. Emergency fund"></div>
+        <div class="field"><label>Target (₹)</label><input type="number" id="g-target" placeholder="0"></div>
+        <div class="field"><label>Current (₹)</label><input type="number" id="g-current" placeholder="0"></div>
+        <div class="field" style="flex:0;justify-content:flex-end;padding-top:18px;"><button class="btn btn-primary btn-sm" onclick="addGoal()">Add goal</button></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- DARK MODE TOGGLE -->
+<button class="btn theme-toggle" onclick="toggleDark()" id="dark-btn" title="Toggle dark mode">☀</button>
+
+<script>
+const fmt = n => '₹' + Math.round(n).toLocaleString('en-IN');
+const today = () => new Date().toISOString().split('T')[0];
+
+// STATE
+let state = {
+  banks: [
+    {name:'Jio Bank',bal:0},{name:'IDFC Bank',bal:0},{name:'HDFC Bank',bal:0},
+    {name:'Bank of Baroda',bal:0},{name:'Bandhan Bank',bal:0}
+  ],
+  cash: 0,
+  cards: [
+    {name:'IDFC CC',out:0,limit:0,due:0},
+    {name:'SBI BPCL',out:0,limit:0,due:0},
+    {name:'HDFC Tata Neu',out:0,limit:0,due:0},
+    {name:'HDFC Swiggy',out:0,limit:0,due:0}
+  ],
+  lending: [],
+  misc: [],
+  loans: [],
+  transactions: [],
+  snapshots: [],
+  goals: [],
+  safetyThreshold: 10000,
+  dark: false
+};
+
+// Load from localStorage
+try { const s = localStorage.getItem('fintrack'); if(s) state = {...state, ...JSON.parse(s)}; } catch(e){}
+const save = () => { try { localStorage.setItem('fintrack', JSON.stringify(state)); } catch(e){} };
+
+// DARK MODE
+if(state.dark) document.body.classList.add('dark');
+function toggleDark() {
+  state.dark = !state.dark;
+  document.body.classList.toggle('dark', state.dark);
+  document.getElementById('dark-btn').textContent = state.dark ? '☀' : '☾';
+  save(); renderCharts();
+}
+document.getElementById('dark-btn').textContent = state.dark ? '☀' : '☾';
+
+// DATE
+document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+
+// NAV
+const sections = ['dashboard','alerts','banks','cards','lending','loans','misc','transactions','emi','snapshots','goals'];
+function nav(id) {
+  sections.forEach(s => {
+    document.getElementById('sec-'+s).classList.toggle('active', s===id);
+  });
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('onclick') === `nav('${id}')`);
+  });
+  document.getElementById('section-breadcrumb').textContent = id.charAt(0).toUpperCase()+id.slice(1);
+  if(id==='emi') calcEMI();
+  if(id==='snapshots') renderSnapshots();
+}
+
+function toggleRow(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display==='none'?'flex':'none';
+}
+
+// COMPUTED
+const totalBank = () => state.banks.reduce((s,b)=>s+b.bal,0) + state.cash;
+const totalCC = () => state.cards.reduce((s,c)=>s+c.out,0);
+const totalCCLimit = () => state.cards.reduce((s,c)=>s+c.limit,0);
+const totalLent = () => state.lending.reduce((s,l)=>s+l.amt,0);
+const totalInt = () => state.lending.reduce((s,l)=>s+l.int,0);
+const totalMisc = () => state.misc.reduce((s,m)=>s+m.amt,0);
+const totalLoans = () => state.loans.reduce((s,l)=>s+l.out,0);
+const netWorth = () => totalBank() + totalLent() - totalCC() - totalLoans();
+const overallUtil = () => totalCCLimit()>0 ? (totalCC()/totalCCLimit()*100) : 0;
+
+// RENDER ALL
+function renderAll() {
+  renderBanks(); renderCC(); renderLending(); renderLoans(); renderMisc();
+  renderTransactions(); renderGoals(); renderAlerts(); renderDashboard();
+  save();
+}
+
+// BANKS
+function renderBanks() {
+  const el = document.getElementById('bank-list');
+  el.innerHTML = state.banks.map((b,i)=>`
+    <div class="row">
+      <span class="row-label">${b.name}</span>
+      <input type="number" class="inline-num" value="${b.bal}" placeholder="0"
+        onchange="state.banks[${i}].bal=+this.value;renderAll()">
+      <button class="btn btn-danger btn-sm" onclick="state.banks.splice(${i},1);renderAll()">✕</button>
+    </div>`).join('');
+  document.getElementById('cash-input').value = state.cash;
+}
+function addBank() {
+  const name=document.getElementById('b-name').value.trim();
+  const bal=+document.getElementById('b-bal').value||0;
+  if(!name) return;
+  state.banks.push({name,bal});
+  document.getElementById('b-name').value=''; document.getElementById('b-bal').value='';
+  toggleRow('bank-add-row'); renderAll();
+}
+
+// CREDIT CARDS
+function renderCC() {
+  const el = document.getElementById('cc-list');
+  el.innerHTML = state.cards.map((c,i)=>{
+    const used = c.limit>0 ? Math.min(100,Math.round(c.out/c.limit*100)) : 0;
+    const col = used>75?'var(--red)':used>30?'var(--amber)':'var(--green)';
+    const rem = Math.max(0, c.limit-c.out);
+    const dueStr = c.due ? `Due: ${c.due}th` : '';
+    return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+      <div class="row" style="border:none;padding:0 0 6px;">
+        <span class="row-label" style="font-weight:500;">${c.name}
+          ${dueStr?`<small>${dueStr}</small>`:''}
+        </span>
+        <span class="badge ${used>75?'red':used>30?'amber':'green'}">${used}% used</span>
+        <button class="btn btn-danger btn-sm" onclick="state.cards.splice(${i},1);renderAll()">✕</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+        <span style="font-size:12px;color:var(--text3);">Outstanding:</span>
+        <input type="number" style="width:110px;font-size:12px;padding:4px 8px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;"
+          value="${c.out}" onchange="state.cards[${i}].out=+this.value;renderAll()">
+        <span style="font-size:12px;color:var(--text3);">Limit:</span>
+        <input type="number" style="width:110px;font-size:12px;padding:4px 8px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;"
+          value="${c.limit}" onchange="state.cards[${i}].limit=+this.value;renderAll()">
+        <span style="font-size:12px;font-weight:500;color:var(--green);">Rem: ${fmt(rem)}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="prog-wrap"><div class="prog-bar" style="width:${used}%;background:${col};"></div></div>
+        <span style="font-size:11px;color:var(--text3);min-width:32px;">${used}%</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // CC summary metrics
+  const sm = document.getElementById('cc-summary-metrics');
+  if(sm) sm.innerHTML = `
+    <div class="metric"><div class="metric-label">Total outstanding</div><div class="metric-val red">${fmt(totalCC())}</div></div>
+    <div class="metric"><div class="metric-label">Total limit</div><div class="metric-val blue">${fmt(totalCCLimit())}</div></div>
+    <div class="metric"><div class="metric-label">Available credit</div><div class="metric-val green">${fmt(Math.max(0,totalCCLimit()-totalCC()))}</div></div>`;
+
+  // util bars on dashboard
+  const ub = document.getElementById('cc-util-bars');
+  if(ub) ub.innerHTML = state.cards.map(c=>{
+    const used = c.limit>0?Math.min(100,Math.round(c.out/c.limit*100)):0;
+    const col = used>75?'var(--red)':used>30?'var(--amber)':'var(--green)';
+    return `<div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+        <span style="color:var(--text2);">${c.name}</span>
+        <span style="font-family:'JetBrains Mono',monospace;color:var(--text3);">${used}%</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-bar" style="width:${used}%;background:${col};"></div></div>
+    </div>`;
+  }).join('') || '<span style="font-size:13px;color:var(--text3);">No cards added.</span>';
+}
+function addCC() {
+  const name=document.getElementById('cc-name').value.trim();
+  if(!name) return;
+  state.cards.push({name,out:+document.getElementById('cc-out').value||0,limit:+document.getElementById('cc-lim').value||0,due:+document.getElementById('cc-due').value||0});
+  ['cc-name','cc-out','cc-lim','cc-due'].forEach(id=>document.getElementById(id).value='');
+  toggleRow('cc-add-row'); renderAll();
+}
+
+// LENDING
+function renderLending() {
+  const el = document.getElementById('lend-list');
+  el.innerHTML = state.lending.length ? state.lending.map((l,i)=>{
+    const months = l.date ? Math.max(0,Math.round((new Date()-new Date(l.date))/(1000*60*60*24*30))) : '—';
+    const earned = l.date ? months*l.int : '—';
+    return `<div class="row" style="flex-wrap:wrap;gap:6px;">
+      <div class="row-label">${l.name}<small>${l.note||''} · Lent: ${l.date||'—'} · ${months} months</small></div>
+      <span class="badge amber">+${fmt(l.int)}/mo</span>
+      ${l.date?`<span class="badge green">Earned: ${fmt(earned)}</span>`:''}
+      <span class="row-val green">${fmt(l.amt)}</span>
+      <button class="btn btn-danger btn-sm" onclick="state.lending.splice(${i},1);renderAll()">✕</button>
+    </div>`;
+  }).join('') : '<span style="font-size:13px;color:var(--text3);">No lending entries.</span>';
+
+  const lm = document.getElementById('lend-metrics');
+  if(lm) lm.innerHTML = `
+    <div class="metric"><div class="metric-label">Total lent out</div><div class="metric-val">${fmt(totalLent())}</div></div>
+    <div class="metric"><div class="metric-label">Monthly interest</div><div class="metric-val amber">${fmt(totalInt())}/mo</div></div>
+    <div class="metric"><div class="metric-label">Borrowers</div><div class="metric-val blue">${state.lending.length}</div></div>`;
+}
+function addLend() {
+  const name=document.getElementById('l-name').value.trim();
+  if(!name) return;
+  state.lending.push({name,amt:+document.getElementById('l-amt').value||0,int:+document.getElementById('l-int').value||0,date:document.getElementById('l-date').value,note:document.getElementById('l-note').value.trim()});
+  ['l-name','l-amt','l-int','l-date','l-note'].forEach(id=>document.getElementById(id).value='');
+  toggleRow('lend-add-row'); renderAll();
+}
+
+// LOANS
+function renderLoans() {
+  const el = document.getElementById('loan-list');
+  el.innerHTML = state.loans.length ? state.loans.map((l,i)=>`
+    <div class="row">
+      <div class="row-label">${l.name}<small>${l.note||''} ${l.emi?'· EMI: '+fmt(l.emi)+'/mo':''}</small></div>
+      <span class="row-val red">${fmt(l.out)}</span>
+      <button class="btn btn-danger btn-sm" onclick="state.loans.splice(${i},1);renderAll()">✕</button>
+    </div>`).join('') : '<span style="font-size:13px;color:var(--text3);">No loans added.</span>';
+}
+function addLoan() {
+  const name=document.getElementById('ln-name').value.trim();
+  if(!name) return;
+  state.loans.push({name,out:+document.getElementById('ln-out').value||0,emi:+document.getElementById('ln-emi').value||0,note:document.getElementById('ln-note').value.trim()});
+  ['ln-name','ln-out','ln-emi','ln-note'].forEach(id=>document.getElementById(id).value='');
+  toggleRow('loan-add-row'); renderAll();
+}
+
+// MISC
+function renderMisc() {
+  const el = document.getElementById('misc-list');
+  el.innerHTML = state.misc.length ? state.misc.map((m,i)=>`
+    <div class="tx-row">
+      <div class="tx-dot" style="background:var(--green);"></div>
+      <div class="tx-cat">${m.desc}<div class="tx-note">${m.cat||''} · ${m.date||''}</div></div>
+      <div class="tx-amt" style="color:var(--green);">${fmt(m.amt)}</div>
+      <button class="btn btn-danger btn-sm" onclick="state.misc.splice(${i},1);renderAll()">✕</button>
+    </div>`).join('') : '<span style="font-size:13px;color:var(--text3);">No income entries.</span>';
+}
+function addMisc() {
+  const desc=document.getElementById('m-desc').value.trim();
+  if(!desc) return;
+  state.misc.push({desc,amt:+document.getElementById('m-amt').value||0,cat:document.getElementById('m-cat').value,date:document.getElementById('m-date').value});
+  ['m-desc','m-amt','m-date'].forEach(id=>document.getElementById(id).value='');
+  toggleRow('misc-add-row'); renderAll();
+}
+
+// TRANSACTIONS
+function renderTransactions() {
+  const el = document.getElementById('tx-list');
+  if(!state.transactions.length) { el.innerHTML='<span style="font-size:13px;color:var(--text3);">No transactions yet.</span>'; return; }
+  const sorted = [...state.transactions].reverse();
+  el.innerHTML = sorted.map((t,ri)=>{
+    const i = state.transactions.length-1-ri;
+    const isInc = t.type==='income';
+    return `<div class="tx-row">
+      <div class="tx-dot" style="background:${isInc?'var(--green)':'var(--red)'};"></div>
+      <div class="tx-cat">${t.desc}<div class="tx-note">${t.cat}</div></div>
+      <div class="tx-date">${t.date||''}</div>
+      <div class="tx-amt" style="color:${isInc?'var(--green)':'var(--red)'};">${isInc?'+':'−'}${fmt(t.amt)}</div>
+      <button class="btn btn-danger btn-sm" onclick="state.transactions.splice(${i},1);renderAll()">✕</button>
+    </div>`;
+  }).join('');
+}
+function addTx() {
+  const desc=document.getElementById('tx-desc').value.trim();
+  if(!desc) return;
+  state.transactions.push({desc,amt:+document.getElementById('tx-amt').value||0,type:document.getElementById('tx-type').value,cat:document.getElementById('tx-cat').value,date:document.getElementById('tx-date').value||today()});
+  ['tx-desc','tx-amt'].forEach(id=>document.getElementById(id).value='');
+  renderAll();
+}
+
+// GOALS
+function renderGoals() {
+  const el = document.getElementById('goals-list');
+  if(!state.goals.length) { el.innerHTML=''; return; }
+  el.innerHTML = state.goals.map((g,i)=>{
+    const pct = g.target>0?Math.min(100,Math.round(g.current/g.target*100)):0;
+    const col = pct>=100?'var(--green)':pct>50?'var(--blue)':'var(--amber)';
+    return `<div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="flex:1;font-weight:500;">${g.name}</span>
+        <span class="badge ${pct>=100?'green':pct>50?'blue':'amber'}">${pct}%</span>
+        <button class="btn btn-danger btn-sm" onclick="state.goals.splice(${i},1);renderAll()">✕</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px;">
+        <span>${fmt(g.current)} saved</span><span>${fmt(g.target)} goal</span>
+      </div>
+      <div class="prog-wrap" style="height:8px;"><div class="prog-bar" style="width:${pct}%;background:${col};height:8px;"></div></div>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+        <span style="font-size:12px;color:var(--text3);">Update current:</span>
+        <input type="number" style="width:120px;font-size:12px;padding:4px 8px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;"
+          value="${g.current}" onchange="state.goals[${i}].current=+this.value;renderAll()">
+      </div>
+    </div>`;
+  }).join('');
+}
+function addGoal() {
+  const name=document.getElementById('g-name').value.trim();
+  if(!name) return;
+  state.goals.push({name,target:+document.getElementById('g-target').value||0,current:+document.getElementById('g-current').value||0});
+  ['g-name','g-target','g-current'].forEach(id=>document.getElementById(id).value='');
+  renderAll();
+}
+
+// ALERTS
+function getAlerts() {
+  const alerts = [];
+  state.cards.forEach(c=>{
+    const used = c.limit>0?c.out/c.limit*100:0;
+    if(used>75) alerts.push({type:'red',msg:`${c.name}: utilization at ${Math.round(used)}% — very high. Pay down to below 30% to protect your credit score.`});
+    else if(used>30) alerts.push({type:'amber',msg:`${c.name}: utilization at ${Math.round(used)}%. Aim for under 30% for a healthy credit score.`});
+    if(c.due) {
+      const daysLeft = c.due - new Date().getDate();
+      if(daysLeft>=0 && daysLeft<=5) alerts.push({type:'amber',msg:`${c.name} payment due in ${daysLeft} day(s) (${c.due}th of this month).`});
+    }
+  });
+  if(totalBank() < state.safetyThreshold && state.safetyThreshold>0) alerts.push({type:'red',msg:`Bank + cash balance (${fmt(totalBank())}) is below your safety threshold of ${fmt(state.safetyThreshold)}.`});
+  if(totalCC()>0 && totalLoans()>0) alerts.push({type:'amber',msg:`You have both CC outstanding and active loans. Consider prioritising high-interest CC debt first.`});
+  if(overallUtil()>80) alerts.push({type:'red',msg:`Overall credit utilization is ${Math.round(overallUtil())}% — critically high across all cards.`});
+  if(alerts.length===0) alerts.push({type:'green',msg:'All clear! No financial alerts at this time.'});
+  return alerts;
+}
+function renderAlerts() {
+  const alerts = getAlerts();
+  const html = alerts.map(a=>`<div class="alert ${a.type}">${a.type==='red'?'⚠':a.type==='amber'?'◈':'✓'} ${a.msg}</div>`).join('');
+  const banner = document.getElementById('alert-banner');
+  const allAlerts = document.getElementById('all-alerts');
+  const warnings = alerts.filter(a=>a.type!=='green');
+  if(banner) banner.innerHTML = warnings.length ? warnings.slice(0,2).map(a=>`<div class="alert ${a.type}">${a.type==='red'?'⚠':'◈'} ${a.msg}</div>`).join('') : '';
+  if(allAlerts) allAlerts.innerHTML = html;
+}
+
+// HEALTH SCORE
+function renderHealthScore() {
+  let score = 100;
+  const tips = [];
+  if(overallUtil()>75) { score-=30; tips.push('⚠ CC utilization over 75% — major drag on score'); }
+  else if(overallUtil()>30) { score-=15; tips.push('◈ CC utilization over 30% — room to improve'); }
+  if(totalLoans()>totalBank()*2) { score-=20; tips.push('⚠ Loan outstanding is high relative to bank balance'); }
+  if(totalCC()>totalBank()*0.5) { score-=15; tips.push('◈ CC debt is over 50% of your liquid balance'); }
+  if(state.goals.length>0) score+=5;
+  score = Math.max(0,Math.min(100,score));
+  const arc = document.getElementById('score-arc');
+  const num = document.getElementById('score-num');
+  if(arc && num) {
+    const circumference = 264;
+    arc.style.strokeDashoffset = circumference - (score/100)*circumference;
+    arc.style.stroke = score>70?'#4ade80':score>40?'#fbbf24':'#f87171';
+    num.textContent = score;
+    num.style.color = score>70?'var(--green)':score>40?'var(--amber)':'var(--red)';
+  }
+  const tipsEl = document.getElementById('score-tips');
+  if(tipsEl) tipsEl.innerHTML = tips.length ? tips.join('<br>') : '<span style="color:var(--green);">✓ Finances look healthy!</span>';
+}
+
+// DASHBOARD METRICS
+function renderDashboard() {
+  const m = document.getElementById('top-metrics');
+  if(!m) return;
+  const net = netWorth();
+  m.innerHTML = `
+    <div class="metric"><div class="metric-label">Total bank + cash</div><div class="metric-val green">${fmt(totalBank())}</div><div class="metric-sub">${state.banks.length} accounts + cash</div></div>
+    <div class="metric"><div class="metric-label">CC outstanding</div><div class="metric-val red">${fmt(totalCC())}</div><div class="metric-sub">${Math.round(overallUtil())}% overall utilization</div></div>
+    <div class="metric"><div class="metric-label">Loan outstanding</div><div class="metric-val amber">${fmt(totalLoans())}</div><div class="metric-sub">${state.loans.length} loan(s)</div></div>
+    <div class="metric"><div class="metric-label">Net position</div><div class="metric-val ${net>=0?'green':'red'}">${fmt(net)}</div><div class="metric-sub">Bank+Lent − CC − Loans</div></div>`;
+  renderHealthScore();
+  renderCharts();
+}
+
+// CHARTS
+let pieChart, trendChart, emiChart;
+function renderCharts() {
+  const isDark = state.dark;
+  const textCol = isDark?'#9e9b96':'#6b6760';
+
+  // PIE
+  const pieEl = document.getElementById('pieChart');
+  if(pieEl) {
+    if(pieChart) pieChart.destroy();
+    pieChart = new Chart(pieEl, {
+      type:'doughnut',
+      data:{
+        labels:['Bank+Cash','Lent out','CC Outstanding','Loans'],
+        datasets:[{data:[totalBank(),totalLent(),totalCC(),totalLoans()],backgroundColor:['#16a34a','#2563eb','#dc2626','#d97706'],borderWidth:0}]
+      },
+      options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
+    });
+  }
+
+  // TREND
+  const trendEl = document.getElementById('trendChart');
+  if(trendEl) {
+    if(trendChart) trendChart.destroy();
+    const snaps = state.snapshots.slice(-8);
+    const labels = snaps.length ? snaps.map(s=>s.date) : ['Now'];
+    const data = snaps.length ? snaps.map(s=>s.net) : [netWorth()];
+    trendChart = new Chart(trendEl, {
+      type:'line',
+      data:{labels,datasets:[{label:'Net worth',data,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',borderWidth:2,tension:0.4,pointRadius:4,fill:true}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:textCol,font:{size:11}}},y:{ticks:{color:textCol,font:{size:11},callback:v=>'₹'+Math.round(v/1000)+'k'}}}}
+    });
+  }
+}
+
+// EMI
+function calcEMI() {
+  const P=+document.getElementById('emi-amt').value||0;
+  const r=(+document.getElementById('emi-rate').value||0)/12/100;
+  const n=+document.getElementById('emi-tenure').value||1;
+  const emi = r>0 ? P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1) : P/n;
+  const total = emi*n;
+  const interest = total-P;
+  document.getElementById('emi-result').textContent = fmt(emi);
+  document.getElementById('emi-detail').textContent = `Total payable: ${fmt(total)} · Interest: ${fmt(interest)} · Principal: ${fmt(P)}`;
+  const emiEl = document.getElementById('emiChart');
+  if(emiEl) {
+    if(emiChart) emiChart.destroy();
+    emiChart = new Chart(emiEl,{
+      type:'doughnut',
+      data:{labels:['Principal','Interest'],datasets:[{data:[Math.round(P),Math.round(interest)],backgroundColor:['#2563eb','#dc2626'],borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
+    });
+  }
+}
+
+// SNAPSHOTS
+function saveSnapshot() {
+  const snap = {date:today(),bank:totalBank(),cc:totalCC(),loans:totalLoans(),net:netWorth()};
+  state.snapshots.push(snap);
+  save();
+  renderSnapshots();
+  renderCharts();
+  alert('Snapshot saved for '+snap.date);
+}
+function renderSnapshots() {
+  const el = document.getElementById('snap-table-body');
+  const empty = document.getElementById('snap-empty');
+  if(!state.snapshots.length) { el.innerHTML=''; if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  el.innerHTML = [...state.snapshots].reverse().map((s,ri)=>{
+    const i=state.snapshots.length-1-ri;
+    return `<tr>
+      <td>${s.date}</td>
+      <td style="color:var(--green);">${fmt(s.bank)}</td>
+      <td style="color:var(--red);">${fmt(s.cc)}</td>
+      <td style="color:var(--amber);">${fmt(s.loans)}</td>
+      <td style="color:${s.net>=0?'var(--green)':'var(--red)'};">${fmt(s.net)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="state.snapshots.splice(${i},1);save();renderSnapshots();">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// EXPORT
+function exportData() {
+  const json = JSON.stringify(state, null, 2);
+  const blob = new Blob([json],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'fintrack_'+today()+'.json';
+  a.click();
+}
+
+// INIT
+renderAll();
+renderSnapshots();
+setTimeout(calcEMI, 200);
+</script>
+</body>
+</html>
